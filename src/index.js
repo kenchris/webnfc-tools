@@ -57,7 +57,7 @@ class NDEFRecordRoot extends LitElement {
     const addRecord = (name) => {
       const element = document.createElement(name);
       this.appendChild(element);
-    } 
+    }
 
     return html`
       <div id="header">
@@ -72,7 +72,7 @@ class NDEFRecordRoot extends LitElement {
             <mwc-list-item @click=${() => addRecord("record-url")}>URL record</mwc-list-item>
             <mwc-list-item @click=${() => addRecord("record-absolute-url")}>Absolute URL record</mwc-list-item>
             <mwc-list-item @click=${() => addRecord("record-empty")}>Smart Poster record</mwc-list-item>
-            <mwc-list-item @click=${() => addRecord("record-empty")}>MIME type record</mwc-list-item>
+            <mwc-list-item @click=${() => addRecord("record-mime")}>MIME type record</mwc-list-item>
             <mwc-list-item @click=${() => addRecord("record-empty")}>External type record</mwc-list-item>
             <mwc-list-item @click=${() => addRecord("record-empty")}>Unknown record</mwc-list-item>
           </mwc-menu>
@@ -114,7 +114,7 @@ const subItemStyle = css`
     margin: 16px 0px 0px 0px;
     width: 100%;
   }
-`; 
+`;
 
 class NDEFEmptyRecord extends LitElement {
   static styles = [subItemStyle];
@@ -183,6 +183,79 @@ class NDEFTextRecord extends LitElement {
   }
 }
 customElements.define("record-text", NDEFTextRecord);
+
+class NDEFMIMERecord extends LitElement {
+  static styles = [subItemStyle, css`
+    mwc-textfield, mwc-button, #data-size {
+      margin: 16px 0px 0px 0px;
+      width: 100%;
+    }
+  `];
+
+  constructor() {
+    super();
+    this.fileSelect = document.createElement("input");
+    this.fileSelect.type = "file";
+  }
+
+  records() {
+    const mimeValue = this.shadowRoot.querySelector("#mime-input").value || "application/octet-stream";
+
+    return {
+      recordType: "mime",
+      mimeType: mimeValue,
+      data: this.dataSource || null
+    };
+  }
+
+  async selectDataSource() {
+    const file = await new Promise(resolve => {
+      this.fileSelect.addEventListener("change",
+        _ => resolve(this.fileSelect.files[0]),
+        { once: true }
+      );
+      this.fileSelect.click();
+    });
+
+    const mimeInput = this.shadowRoot.querySelector("#mime-input");
+
+    if (file.name.endsWith(".png")) {
+      mimeInput.value = "image/png";
+    } else if (file.name.endsWith(".jpg")) {
+      mimeInput.value = "image/jpg";
+    } else if (file.name.endsWith(".json")) {
+      mimeInput.value = "application/json";
+    }
+    else {
+      mimeInput.value = "application/octet-stream";
+    }
+
+    this.dataSource = await file.arrayBuffer();
+
+    const size = this.shadowRoot.querySelector("#size");
+    size.innerText = this.dataSource.byteLength;
+
+    // TODO: Gray out write until ready.
+  }
+
+  render() {
+    return html`
+      <div id="header">
+        Record
+        &nbsp;&nbsp;&nbsp;
+        <span>Text (UTF-8)</span>
+        <div id="expand"></div>
+        <div style="position: relative;">
+          <mwc-icon-button icon="remove" @click=${() => this.remove()}></mwc-icon-button>
+        </div>
+      </div>
+      <mwc-textfield id="mime-input" outlined label="MIME type" value="application/octet-stream"></mwc-textfield>
+      <div id="data-size">Data source size: <span id="size">0</span></div>
+      <mwc-button @click=${() => this.selectDataSource()}>Select data source</mwc-button>
+    `;
+  }
+}
+customElements.define("record-mime", NDEFMIMERecord);
 
 class NDEFURLRecord extends LitElement {
   static styles = [subItemStyle];
