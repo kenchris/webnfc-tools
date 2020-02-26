@@ -203,7 +203,7 @@ class NDEFMIMERecord extends LitElement {
 
     return {
       recordType: "mime",
-      mimeType: mimeValue,
+      mediaType: mimeValue,
       data: this.dataSource || null
     };
   }
